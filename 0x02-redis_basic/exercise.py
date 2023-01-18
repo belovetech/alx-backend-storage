@@ -10,9 +10,28 @@ def count_calls(method: Callable) -> Callable:
     """Count Cache class methods calls."""
     @wraps(method)
     def wrapper(self, *args, **kwargs):
+        """Wrapper function for decorator"""
         key = method.__qualname__
         self._redis.incr(key)
         return method(self, *args, **kwargs)
+
+    return wrapper
+
+
+def call_history(method: Callable) -> Callable:
+    """Store history of input and output of a particular method"""
+    key = method.__qualname__
+    keyinput = key + ":inputs"
+    keyoutput = key + ":outputs"
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """Wrapper function for decorator"""
+        self._redis.rpush(keyinput, str(args))
+        value = method(self, *args, **kwargs)
+        self._redis.rpush(keyoutput, str(value))
+        return value
+
     return wrapper
 
 
@@ -24,6 +43,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """Store data into catch
@@ -34,7 +54,7 @@ class Cache:
         Return:
             (str): Key of the value store
         """
-        key = str(uuid.uuid1())
+        key = str(uuid.uuid4())
         self._redis.set(key, data)
         return key
 
