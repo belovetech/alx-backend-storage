@@ -16,14 +16,13 @@ def count_request(method: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         """Wrapper function for decorator"""
         url = str(*args)
-        key = "count:{}".format(url)
-        _redis.incr(key)
-        cache = _redis.get("count:{}".format(url))
+        _redis.incr("count:{}".format(url))
+        cache = _redis.get("cached:{}".format(url))
 
         if cache:
             return cache.decode('utf-8')
         html = method(url)
-        _redis.setex("count:".format(url), 10, html)
+        _redis.setex("cached:".format(url), 10, html)
         return html
 
     return wrapper
