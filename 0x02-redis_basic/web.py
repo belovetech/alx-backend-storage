@@ -9,22 +9,43 @@ from typing import Callable
 _redis = redis.Redis()
 
 
+# def count_request(method: Callable) -> Callable:
+#     """Count number of request sent to a URL"""
+
+#     @wraps(method)
+#     def wrapper(*args, **kwargs):
+#         """Wrapper function for decorator"""
+#         url = str(*args)
+#         key = "count:{}".format(str(*args))
+
+#         _redis.incr(key)
+#         cache = _redis.get(key)
+
+#         if cache:
+#             return cache.decode('utf-8')
+#         else:
+#             html = method(url)
+#             _redis.setex(key, 5, html)
+#         return html
+
+#     return wrapper
+
 def count_request(method: Callable) -> Callable:
     """Count number of request sent to a URL"""
 
     @wraps(method)
     def wrapper(*args, **kwargs):
-        """Wrapper function for decorator"""
-        url = str(*args)
-        _redis.incr("count:{}".format(url))
-        cache = _redis.get("count:{}".format(url))
+        # url = str(*args)
+        key = "count:{}".format(str(*args))
 
-        if cache:
-            return cache.decode('utf-8')
-        else:
-            html = method(url)
-            _redis.setex("count:".format(url), 10, html)
-        return html
+        _redis.incr(key)
+        value = _redis.get(key)
+        _redis.expire(key, 10)
+
+        html = method(*args, **kwargs)
+
+        print(f"Time left: {_redis.ttl(key)}")
+        return value.decode('utf-8')
 
     return wrapper
 
