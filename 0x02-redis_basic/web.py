@@ -13,15 +13,15 @@ def count_request(method: Callable) -> Callable:
     """Count number of request sent to a URL"""
 
     @wraps(method)
-    def wrapper(url):
-        """Wrapper function"""
-        key = "count:{}".format(url)
+    def wrapper(*args, **kwargs):
+        """Wrapper function for decorator"""
+        key = "count:{}".format(str(args))
         _redis.incr(key)
         cache = _redis.get(key)
 
         if cache:
             return cache.decode('utf-8')
-        html = method(url)
+        html = method(str(args))
         _redis.setex(key, 10, html)
         return html
 

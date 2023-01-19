@@ -4,7 +4,7 @@ get_page = __import__('web').get_page
 
 def main():
     url = "http://slowwly.robertomurray.co.uk"
-    url2 = "https://github.com/belovetech"
+    # url = "https://github.com/belovetech"
 
     res = get_page(url)
     print(res)
